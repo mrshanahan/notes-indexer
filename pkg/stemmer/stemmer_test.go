@@ -15,7 +15,7 @@ func TestParseToken(t *testing.T) {
 		expected := &porterStructure{
 			Token: token,
 			M:     0,
-			Components: []tokenComponent{
+			Components: []*tokenComponent{
 				{TYPE_CONSONANT, "tr"},
 				{TYPE_VOWEL, "ee"},
 			},
@@ -28,7 +28,7 @@ func TestParseToken(t *testing.T) {
 		expected := &porterStructure{
 			Token: token,
 			M:     1,
-			Components: []tokenComponent{
+			Components: []*tokenComponent{
 				{TYPE_CONSONANT, "tr"},
 				{TYPE_VOWEL, "ou"},
 				{TYPE_CONSONANT, "bl"},
@@ -43,7 +43,7 @@ func TestParseToken(t *testing.T) {
 		expected := &porterStructure{
 			Token: token,
 			M:     1,
-			Components: []tokenComponent{
+			Components: []*tokenComponent{
 				{TYPE_VOWEL, "oa"},
 				{TYPE_CONSONANT, "ts"},
 			},
@@ -56,7 +56,7 @@ func TestParseToken(t *testing.T) {
 		expected := &porterStructure{
 			Token: token,
 			M:     1,
-			Components: []tokenComponent{
+			Components: []*tokenComponent{
 				{TYPE_CONSONANT, "tr"},
 				{TYPE_VOWEL, "ee"},
 				{TYPE_CONSONANT, "s"},
@@ -70,7 +70,7 @@ func TestParseToken(t *testing.T) {
 		expected := &porterStructure{
 			Token: token,
 			M:     1,
-			Components: []tokenComponent{
+			Components: []*tokenComponent{
 				{TYPE_VOWEL, "i"},
 				{TYPE_CONSONANT, "v"},
 				{TYPE_VOWEL, "y"},
@@ -84,7 +84,7 @@ func TestParseToken(t *testing.T) {
 		expected := &porterStructure{
 			Token: token,
 			M:     2,
-			Components: []tokenComponent{
+			Components: []*tokenComponent{
 				{TYPE_CONSONANT, "tr"},
 				{TYPE_VOWEL, "ou"},
 				{TYPE_CONSONANT, "bl"},
@@ -100,7 +100,7 @@ func TestParseToken(t *testing.T) {
 		expected := &porterStructure{
 			Token: token,
 			M:     2,
-			Components: []tokenComponent{
+			Components: []*tokenComponent{
 				{TYPE_CONSONANT, "pr"},
 				{TYPE_VOWEL, "i"},
 				{TYPE_CONSONANT, "v"},
@@ -117,7 +117,7 @@ func TestParseToken(t *testing.T) {
 		expected := &porterStructure{
 			Token: token,
 			M:     2,
-			Components: []tokenComponent{
+			Components: []*tokenComponent{
 				{TYPE_VOWEL, "oa"},
 				{TYPE_CONSONANT, "t"},
 				{TYPE_VOWEL, "e"},
@@ -132,7 +132,7 @@ func TestParseToken(t *testing.T) {
 		expected := &porterStructure{
 			Token: token,
 			M:     2,
-			Components: []tokenComponent{
+			Components: []*tokenComponent{
 				{TYPE_VOWEL, "o"},
 				{TYPE_CONSONANT, "rr"},
 				{TYPE_VOWEL, "e"},
@@ -146,14 +146,14 @@ func TestParseToken(t *testing.T) {
 }
 
 func TestStem(t *testing.T) {
-	path := "./stemmer_examples.txt"
+	path := "./ref_examples.txt"
 	f, err := os.Open(path)
 	if err != nil {
 		t.Fatalf("Failed to open examples file: %s (%s)", path, err)
 	}
 	defer f.Close()
 
-	splitPatt := regexp.MustCompile(`^(\w+)\s*->\s*(\w+)$`)
+	splitPatt := regexp.MustCompile(`^((\w+)\s*->\s*(\w+))?(\s*#.*)?$`)
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -161,16 +161,13 @@ func TestStem(t *testing.T) {
 		if match == nil {
 			t.Fatalf("Line did not match expected format: %s", line)
 		}
-		input := match[0][1]
-		expected := match[0][2]
+		if match[0][1] != "" {
+			continue
+		}
+		input := match[0][2]
+		expected := match[0][3]
 		actual := Stem(input)
 		t.Logf("Testing: %s", line)
 		assert.Equal(t, expected, actual)
 	}
-}
-
-func Test(t *testing.T) {
-	splitPatt := regexp.MustCompile(`^(\w+)\s*->\s*(\w+)$`)
-	match := splitPatt.FindAllStringSubmatch("abc -> bac", -1)
-	t.Logf("%s", match)
 }
