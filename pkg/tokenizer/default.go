@@ -9,26 +9,26 @@ var (
 )
 
 type Tokenizer interface {
-	Tokenize(text string) []string
+	Tokenize(text string) ([]string, error)
 }
 
 type tokenizer struct {
 	separators set[rune]
 }
 
-func New() Tokenizer {
+func NewDefault() Tokenizer {
 	return &tokenizer{
 		separators: convertSeparator(DefaultSeparators),
 	}
 }
 
-func NewWithSeparators(seps string) Tokenizer {
+func NewDefaultWithSeparators(seps string) Tokenizer {
 	return &tokenizer{
 		separators: convertSeparator(seps),
 	}
 }
 
-func (t *tokenizer) Tokenize(text string) []string {
+func (t *tokenizer) Tokenize(text string) ([]string, error) {
 	first, tokens, seps := -1, []string{}, t.separators
 	for i, r := range text {
 		issep := seps[r]
@@ -44,7 +44,7 @@ func (t *tokenizer) Tokenize(text string) []string {
 		tok := strings.ToLower(text[first:])
 		tokens = append(tokens, tok)
 	}
-	return tokens
+	return tokens, nil
 }
 
 type set[T comparable] map[T]bool
