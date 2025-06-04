@@ -20,6 +20,7 @@ type porterStructure struct {
 	Token      string
 	Components []*tokenComponent
 	M          int
+	Consonants []bool
 }
 
 func isConsonant(i int, token string, consonants []bool) bool {
@@ -74,6 +75,7 @@ func parseToken(token string) *porterStructure {
 		Token:      token,
 		Components: components,
 		M:          calculateM(components),
+		Consonants: consonants,
 	}
 }
 
@@ -99,14 +101,6 @@ func isVowelComponent(t *tokenComponent) bool {
 	return t.Type == TYPE_VOWEL
 }
 
-func (t *tokenComponent) isSingleVowel() bool {
-	return t.Type == TYPE_VOWEL && len(t.Component) == 1
-}
-
-func (t *tokenComponent) isSingleConsonant() bool {
-	return t.Type == TYPE_CONSONANT && len(t.Component) == 1
-}
-
 func (p *porterStructure) matchesMWithSuffix(pred func(m int) bool, suffix string) bool {
 	if !p.hasSuffix(suffix) {
 		return false
@@ -129,18 +123,18 @@ func (p *porterStructure) matchesRuleWithSuffix(patt, suffix string) bool {
 			len(componentToken) > 1 &&
 			componentToken[len(componentToken)-1] == componentToken[len(componentToken)-2]
 	} else if patt == "*o" { // the stem ends cvc, where the second c is not W, X, or Y (e.g. -WIL, -HOP).
-		numComponents := len(prefixP.Components)
-		endsCvc := numComponents >= 3 &&
-			prefixP.Components[numComponents-3].isSingleConsonant() &&
-			prefixP.Components[numComponents-2].isSingleVowel() &&
-			prefixP.Components[numComponents-1].isSingleConsonant()
+		numPrefixLetters := len(prefixP.Token)
+		endsCvc := numPrefixLetters >= 3 &&
+			prefixP.Consonants[numPrefixLetters-3] == TYPE_CONSONANT &&
+			prefixP.Consonants[numPrefixLetters-2] == TYPE_VOWEL &&
+			prefixP.Consonants[numPrefixLetters-1] == TYPE_CONSONANT
 		if !endsCvc {
 			return false
 		}
-		lastComponentToken := prefixP.Components[numComponents-1].Component
-		notWXY := lastComponentToken != "W" &&
-			lastComponentToken != "X" &&
-			lastComponentToken != "Y"
+		lastPrefixLetter := prefixP.Token[numPrefixLetters-1]
+		notWXY := lastPrefixLetter != 'w' &&
+			lastPrefixLetter != 'x' &&
+			lastPrefixLetter != 'y'
 		return notWXY
 	} else if len(patt) == 2 && patt[0] == '*' { // any pattern of the form *S, *L, etc.
 		letterMatch := s.ToLower(patt)[1]
@@ -186,6 +180,11 @@ func (p *porterStructure) replaceSuffixIfMatchesRule(patt, before, after string)
 func Stem(token string) string {
 	// TODO: Just statically encode every fucking transition. There's < 100, right?
 	//       Can't we just generate those?
+
+	// This is a standard change from the published algorithm: don't touch words of length 1 or 2
+	if len(token) <= 2 {
+		return token
+	}
 
 	// TODO: Don't need to parse until 1b
 	props := parseToken(token)
@@ -252,8 +251,9 @@ func Stem(token string) string {
 		props, _ = props.replaceSuffixIfMatchesM(mGreaterThan0, "anci", "ance")
 	} else if props.hasSuffix("izer") {
 		props, _ = props.replaceSuffixIfMatchesM(mGreaterThan0, "izer", "ize")
-	} else if props.hasSuffix("abli") {
-		props, _ = props.replaceSuffixIfMatchesM(mGreaterThan0, "abli", "able")
+	} else if props.hasSuffix("bli") {
+		// This is a standard change from the published algorithm: bli -> bl instead of abli -> able
+		props, _ = props.replaceSuffixIfMatchesM(mGreaterThan0, "bli", "ble")
 	} else if props.hasSuffix("alli") {
 		props, _ = props.replaceSuffixIfMatchesM(mGreaterThan0, "alli", "al")
 	} else if props.hasSuffix("entli") {
@@ -282,6 +282,9 @@ func Stem(token string) string {
 		props, _ = props.replaceSuffixIfMatchesM(mGreaterThan0, "iviti", "ive")
 	} else if props.hasSuffix("biliti") {
 		props, _ = props.replaceSuffixIfMatchesM(mGreaterThan0, "biliti", "ble")
+	} else if props.hasSuffix("logi") {
+		// This is a standard change from the published algorithm: extra rule to account for "-ology" words
+		props, _ = props.replaceSuffixIfMatchesM(mGreaterThan0, "logi", "log")
 	}
 
 	// Step 3
