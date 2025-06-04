@@ -3,7 +3,6 @@ package stemmer
 import (
 	"bufio"
 	"os"
-	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -146,28 +145,25 @@ func TestParseToken(t *testing.T) {
 }
 
 func TestStem(t *testing.T) {
-	path := "./ref_examples.txt"
-	f, err := os.Open(path)
-	if err != nil {
-		t.Fatalf("Failed to open examples file: %s (%s)", path, err)
-	}
-	defer f.Close()
+	inpPath := "./sample_data/voc.txt"
+	expPath := "./sample_data/output_porter.txt"
 
-	splitPatt := regexp.MustCompile(`^((\w+)\s*->\s*(\w+))?(\s*#.*)?$`)
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		line := scanner.Text()
-		match := splitPatt.FindAllStringSubmatch(line, -1)
-		if match == nil {
-			t.Fatalf("Line did not match expected format: %s", line)
-		}
-		if match[0][1] != "" {
-			continue
-		}
-		input := match[0][2]
-		expected := match[0][3]
+	inpf, err := os.Open(inpPath)
+	if err != nil {
+		t.Fatalf("Failed to open input vocabulary file: %s (%s)", inpPath, err)
+	}
+	defer inpf.Close()
+
+	expf, err := os.Open(expPath)
+	if err != nil {
+		t.Fatalf("Failed to open expected output file: %s (%s)", expPath, err)
+	}
+	defer expf.Close()
+
+	inpScanner, expScanner := bufio.NewScanner(inpf), bufio.NewScanner(expf)
+	for inpScanner.Scan() && expScanner.Scan() {
+		input, expected := inpScanner.Text(), expScanner.Text()
 		actual := Stem(input)
-		t.Logf("Testing: %s", line)
-		assert.Equal(t, expected, actual)
+		assert.Equal(t, expected, actual, "input: %s", input)
 	}
 }
