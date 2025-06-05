@@ -18,6 +18,7 @@ func TestParseToken(t *testing.T) {
 				{TYPE_CONSONANT, "tr"},
 				{TYPE_VOWEL, "ee"},
 			},
+			Consonants: []bool{TYPE_CONSONANT, TYPE_CONSONANT, TYPE_VOWEL, TYPE_VOWEL},
 		}
 		actual := parseToken(token)
 		assert.Equal(t, expected, actual)
@@ -33,6 +34,7 @@ func TestParseToken(t *testing.T) {
 				{TYPE_CONSONANT, "bl"},
 				{TYPE_VOWEL, "e"},
 			},
+			Consonants: []bool{TYPE_CONSONANT, TYPE_CONSONANT, TYPE_VOWEL, TYPE_VOWEL, TYPE_CONSONANT, TYPE_CONSONANT, TYPE_VOWEL},
 		}
 		actual := parseToken(token)
 		assert.Equal(t, expected, actual)
@@ -46,6 +48,7 @@ func TestParseToken(t *testing.T) {
 				{TYPE_VOWEL, "oa"},
 				{TYPE_CONSONANT, "ts"},
 			},
+			Consonants: []bool{TYPE_VOWEL, TYPE_VOWEL, TYPE_CONSONANT, TYPE_CONSONANT},
 		}
 		actual := parseToken(token)
 		assert.Equal(t, expected, actual)
@@ -60,6 +63,7 @@ func TestParseToken(t *testing.T) {
 				{TYPE_VOWEL, "ee"},
 				{TYPE_CONSONANT, "s"},
 			},
+			Consonants: []bool{TYPE_CONSONANT, TYPE_CONSONANT, TYPE_VOWEL, TYPE_VOWEL, TYPE_CONSONANT},
 		}
 		actual := parseToken(token)
 		assert.Equal(t, expected, actual)
@@ -74,6 +78,7 @@ func TestParseToken(t *testing.T) {
 				{TYPE_CONSONANT, "v"},
 				{TYPE_VOWEL, "y"},
 			},
+			Consonants: []bool{TYPE_VOWEL, TYPE_CONSONANT, TYPE_VOWEL},
 		}
 		actual := parseToken(token)
 		assert.Equal(t, expected, actual)
@@ -90,6 +95,7 @@ func TestParseToken(t *testing.T) {
 				{TYPE_VOWEL, "e"},
 				{TYPE_CONSONANT, "s"},
 			},
+			Consonants: []bool{TYPE_CONSONANT, TYPE_CONSONANT, TYPE_VOWEL, TYPE_VOWEL, TYPE_CONSONANT, TYPE_CONSONANT, TYPE_VOWEL, TYPE_CONSONANT},
 		}
 		actual := parseToken(token)
 		assert.Equal(t, expected, actual)
@@ -107,6 +113,7 @@ func TestParseToken(t *testing.T) {
 				{TYPE_CONSONANT, "t"},
 				{TYPE_VOWEL, "e"},
 			},
+			Consonants: []bool{TYPE_CONSONANT, TYPE_CONSONANT, TYPE_VOWEL, TYPE_CONSONANT, TYPE_VOWEL, TYPE_CONSONANT, TYPE_VOWEL},
 		}
 		actual := parseToken(token)
 		assert.Equal(t, expected, actual)
@@ -122,6 +129,7 @@ func TestParseToken(t *testing.T) {
 				{TYPE_VOWEL, "e"},
 				{TYPE_CONSONANT, "n"},
 			},
+			Consonants: []bool{TYPE_VOWEL, TYPE_VOWEL, TYPE_CONSONANT, TYPE_VOWEL, TYPE_CONSONANT},
 		}
 		actual := parseToken(token)
 		assert.Equal(t, expected, actual)
@@ -138,6 +146,7 @@ func TestParseToken(t *testing.T) {
 				{TYPE_CONSONANT, "r"},
 				{TYPE_VOWEL, "y"},
 			},
+			Consonants: []bool{TYPE_VOWEL, TYPE_CONSONANT, TYPE_CONSONANT, TYPE_VOWEL, TYPE_CONSONANT, TYPE_VOWEL},
 		}
 		actual := parseToken(token)
 		assert.Equal(t, expected, actual)
