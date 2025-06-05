@@ -18,8 +18,8 @@ const (
 	PATT_NMTOKEN       string = "(" + PATT_NAMECHAR + ")+"
 	PATT_NMTOKENS      string = "(" + PATT_NMTOKEN + ")" + "(" + "[\x20]" + PATT_NMTOKEN + ")*"
 
-	PATT_PEREFERENCE string = ""
-	PATT_REFERENCE   string = ""
+	PATT_PEREFERENCE string = "%(" + PATT_NAME + ");"
+	PATT_REFERENCE   string = "(" + PATT_ENTITYREF + ")|(" + PATT_CHARREF + ")"
 	PATT_ENTITYVALUE string = "\"" + "([^&%\"]" + "|" + PATT_PEREFERENCE + "|" + PATT_REFERENCE + ")*" + "\""
 	PATT_ATTVALUE    string = "(\"" + "([^<&\"]" + "|" + PATT_REFERENCE + ")*" + "\")" + "|" +
 		"('" + "([^<&']" + "|" + PATT_REFERENCE + ")*" + "')"
@@ -68,18 +68,18 @@ var (
 	patt_XmlEnt *regexp.Regexp = regexp.MustCompile(PATT_XMLENT)
 )
 
-func (t *xmlTokenizer) Tokenize(text string) ([]string, error) {
-	first, cur, tokens, seps := -1, 0, []string{}, t.separators
+func (t *xmlTokenizer) Tokenize(text string) ([]Token, error) {
+	first, cur, tokens, seps := -1, 0, []Token{}, t.separators
 	for cur < len(text) {
 		if loc := patt_XmlEnt.FindStringIndex(text[cur:]); len(loc) > 0 {
 			if first >= 0 {
 				tok := strings.ToLower(text[first:cur])
-				tokens = append(tokens, tok)
+				tokens = append(tokens, Token{tok, TOKEN_TYPE_GENERIC})
 				first = -1
 			}
 			idx, lng := loc[0], loc[1]
 			tok := text[cur+idx : cur+idx+lng]
-			tokens = append(tokens, tok)
+			tokens = append(tokens, Token{tok, TOKEN_TYPE_XML})
 			cur += idx + lng
 		} else {
 			r, rlen := utf8.DecodeRuneInString(text[cur:])
@@ -95,7 +95,7 @@ func (t *xmlTokenizer) Tokenize(text string) ([]string, error) {
 				first = cur
 			} else if issep && first >= 0 {
 				tok := strings.ToLower(text[first:cur])
-				tokens = append(tokens, tok)
+				tokens = append(tokens, Token{tok, TOKEN_TYPE_GENERIC})
 				first = -1
 			}
 			cur += rlen
@@ -103,12 +103,12 @@ func (t *xmlTokenizer) Tokenize(text string) ([]string, error) {
 	}
 	if first >= 0 {
 		tok := strings.ToLower(text[first:])
-		tokens = append(tokens, tok)
+		tokens = append(tokens, Token{tok, TOKEN_TYPE_GENERIC})
 	}
 	return tokens, nil
 }
 
-type xmlTokenizer tokenizer
+type xmlTokenizer defaultTokenizer
 
 func NewXmlTokenizer() Tokenizer {
 	return &xmlTokenizer{

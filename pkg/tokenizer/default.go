@@ -4,54 +4,42 @@ import (
 	"strings"
 )
 
-var (
-	DefaultSeparators = "\t\n\r ,.:?\"!;()"
-)
-
-type Tokenizer interface {
-	Tokenize(text string) ([]string, error)
-}
-
-type tokenizer struct {
+type defaultTokenizer struct {
 	separators set[rune]
 }
 
 func NewDefault() Tokenizer {
-	return &tokenizer{
+	return &defaultTokenizer{
 		separators: convertSeparator(DefaultSeparators),
 	}
 }
 
 func NewDefaultWithSeparators(seps string) Tokenizer {
-	return &tokenizer{
+	return &defaultTokenizer{
 		separators: convertSeparator(seps),
 	}
 }
 
-func (t *tokenizer) Tokenize(text string) ([]string, error) {
-	first, tokens, seps := -1, []string{}, t.separators
+func (t *defaultTokenizer) Tokenize(text string) ([]Token, error) {
+	first, tokens, seps := -1, []Token{}, t.separators
 	for i, r := range text {
 		issep := seps[r]
 		if !issep && first < 0 {
 			first = i
 		} else if issep && first >= 0 {
 			tok := strings.ToLower(text[first:i])
-			tokens = append(tokens, tok)
+			tokens = append(tokens, Token{tok, TOKEN_TYPE_GENERIC})
 			first = -1
 		}
 	}
 	if first >= 0 {
 		tok := strings.ToLower(text[first:])
-		tokens = append(tokens, tok)
+		tokens = append(tokens, Token{tok, TOKEN_TYPE_GENERIC})
 	}
 	return tokens, nil
 }
 
 type set[T comparable] map[T]bool
-
-func newSet[T comparable]() set[T] {
-	return set[T]{}
-}
 
 func convertSeparator(seps string) set[rune] {
 	sepset := make(set[rune])
