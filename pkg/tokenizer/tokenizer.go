@@ -1,7 +1,7 @@
 package tokenizer
 
 var (
-	DefaultSeparators = "\t\n\r ,.:?\"!;()"
+	DefaultSeparators = "\t\n\r ,.:?\"!;()+&<>-+/"
 )
 
 const (
