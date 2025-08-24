@@ -201,6 +201,38 @@ func TestLex(t *testing.T) {
 				MDHeaderIndicToken{1, "# "}, MDUnorderedListIndicToken{"- "}, MDTextToken{"Header ignores rest of list but "}, MDInlineFormatToken{INLINE_FORMAT_START, "*"}, MDTextToken{"not formatting"}, MDInlineFormatToken{INLINE_FORMAT_END, "*"},
 			},
 		},
+		{
+			"escape-inline",
+			"This is an escape\\* line\nAs is ~~The last one\\~\\~ here\\\\.\nBut we don't get any escaped chars for whitespace\\ or end of line.\\\nOr end of text.\\",
+			[]MDToken{
+				MDTextToken{"This is an escape"}, MDEscapeToken{"*"}, MDTextToken{" line"},
+				MDSimpleToken{NL},
+				MDTextToken{"As is "}, MDInlineFormatToken{INLINE_FORMAT_START, "~~"}, MDTextToken{"The last one"}, MDEscapeToken{"~"}, MDEscapeToken{"~"}, MDTextToken{" here"}, MDEscapeToken{"\\"}, MDTextToken{"."},
+				MDSimpleToken{NL},
+				MDTextToken{"But we don't get any escaped chars for whitespace"}, MDEscapeToken{""}, MDTextToken{" or end of line."}, MDEscapeToken{""},
+				MDSimpleToken{NL},
+				MDTextToken{"Or end of text."}, MDEscapeToken{""},
+			},
+		},
+		{
+			"escape-structural-elements",
+			"\\- This won't be a list\n    \\- Neither will this\n1\\. Nor this\n\\1. And this neither\nAnd this\\nwon't be a newline\n\\# And this won't be a header\n\\### And neither will this",
+			[]MDToken{
+				MDEscapeToken{"-"}, MDTextToken{" This won't be a list"},
+				MDSimpleToken{NL},
+				MDLeadingSpaceToken{4}, MDEscapeToken{"-"}, MDTextToken{" Neither will this"},
+				MDSimpleToken{NL},
+				MDTextToken{"1"}, MDEscapeToken{"."}, MDTextToken{" Nor this"},
+				MDSimpleToken{NL},
+				MDEscapeToken{"1"}, MDTextToken{". And this neither"},
+				MDSimpleToken{NL},
+				MDTextToken{"And this"}, MDEscapeToken{"n"}, MDTextToken{"won't be a newline"},
+				MDSimpleToken{NL},
+				MDEscapeToken{"#"}, MDTextToken{" And this won't be a header"},
+				MDSimpleToken{NL},
+				MDEscapeToken{"#"}, MDTextToken{"## And neither will this"},
+			},
+		},
 	}
 
 	for _, test := range tests {

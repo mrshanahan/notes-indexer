@@ -31,7 +31,9 @@ import (
 type MDTokenType int
 
 const (
-	NL MDTokenType = iota
+	NONE MDTokenType = iota
+
+	NL
 
 	TEXT // Requires content
 
@@ -62,9 +64,12 @@ const (
 	INLINE_LINK_DESC_END
 	INLINE_LINK_URL_START
 	INLINE_LINK_URL_END
+
+	SPECIAL_CHAR_ESCAPE
 )
 
 var mdTokenTypeName map[MDTokenType]string = map[MDTokenType]string{
+	NONE:                     "NONE",
 	NL:                       "NL",
 	TEXT:                     "TEXT",
 	LEADING_SPACE:            "LEADING_SPACE",
@@ -79,6 +84,7 @@ var mdTokenTypeName map[MDTokenType]string = map[MDTokenType]string{
 	INLINE_LINK_DESC_END:     "INLINE_LINK_DESC_END",
 	INLINE_LINK_URL_START:    "INLINE_LINK_URL_START",
 	INLINE_LINK_URL_END:      "INLINE_LINK_URL_END",
+	SPECIAL_CHAR_ESCAPE:      "SPECIAL_CHAR_ESCAPE",
 }
 
 func (t MDTokenType) String() string {
@@ -97,6 +103,10 @@ type MDSimpleToken struct {
 
 func (t MDSimpleToken) GetType() MDTokenType { return t.Type }
 
+func (t MDSimpleToken) String() string {
+	return t.Type.String()
+}
+
 type MDInlineFormatToken struct {
 	Type    MDTokenType
 	Content string
@@ -104,11 +114,17 @@ type MDInlineFormatToken struct {
 
 func (t MDInlineFormatToken) GetType() MDTokenType { return t.Type }
 
+func (t MDInlineFormatToken) String() string {
+	return fmt.Sprintf("%v(%s)", t.Type, t.Content)
+}
+
 type MDTextToken struct {
 	Content string
 }
 
 func (t MDTextToken) GetType() MDTokenType { return TEXT }
+
+func (t MDTextToken) String() string { return fmt.Sprintf("%v(%s)", t.GetType(), t.Content) }
 
 type MDHeaderIndicToken struct {
 	Count   int
@@ -117,11 +133,17 @@ type MDHeaderIndicToken struct {
 
 func (t MDHeaderIndicToken) GetType() MDTokenType { return HEADER_INDIC }
 
+func (t MDHeaderIndicToken) String() string {
+	return fmt.Sprintf("HEADER(%s)", strings.Repeat("#", t.Count))
+}
+
 type MDOrderedListIndicToken struct {
 	Content string
 }
 
 func (t MDOrderedListIndicToken) GetType() MDTokenType { return ORDERED_LIST_INDIC }
+
+func (t MDOrderedListIndicToken) String() string { return fmt.Sprintf("LIST(%s)", t.Content) }
 
 type MDUnorderedListIndicToken struct {
 	Content string
@@ -129,15 +151,54 @@ type MDUnorderedListIndicToken struct {
 
 func (t MDUnorderedListIndicToken) GetType() MDTokenType { return UNORDERED_LIST_INDIC }
 
+func (t MDUnorderedListIndicToken) String() string { return fmt.Sprintf("LIST(%s)", t.Content) }
+
 type MDLeadingSpaceToken struct {
 	Count int
 }
 
 func (t MDLeadingSpaceToken) GetType() MDTokenType { return LEADING_SPACE }
 
+func (t MDLeadingSpaceToken) String() string {
+	return fmt.Sprintf("%v(%s)", t.GetType(), strings.Repeat(" ", t.Count))
+}
+
+type MDEscapeToken struct {
+	Content string
+}
+
+func (t MDEscapeToken) GetType() MDTokenType { return SPECIAL_CHAR_ESCAPE }
+
+func (t MDEscapeToken) String() string { return fmt.Sprintf("ESCAPED(%s)", t.Content) }
+
 const (
 	INLINE_FORMAT_CHARS string = "*_~`"
+	SPECIAL_CHARS       string = `\\\[\]()`
 )
+
+func GetSpecialCharTokenType(b byte) MDTokenType {
+	switch b {
+	case '\\':
+		return SPECIAL_CHAR_ESCAPE
+	case '[':
+		return INLINE_LINK_DESC_START
+	case ']':
+		return INLINE_LINK_DESC_END
+	case '(':
+		return INLINE_LINK_URL_START
+	case ')':
+		return INLINE_LINK_URL_END
+	default:
+		return NONE
+	}
+}
+
+// TODO:
+// - Links ([...](...))
+// - a/b/c, A/B/C, i/ii/iii, etc. for lists
+// - Escape at end of line forces new line (instead of concatenating e.g. two paragraphs)
+// - Integration of HTML elements
+//     - Do we need to do this explicitly, or does this just work?
 
 var (
 	// A little tricky - these three groups are start/end/mid respectively.
@@ -164,14 +225,21 @@ var (
 	// NB: We have to be careful with the mid group, as it matches non-zero-width
 	// assertions by necessity - we don't want to say a '*' is mid only because
 	// it is followed by another '*'.
-	inlineFormattingPatt *regexp.Regexp = regexp.MustCompile(
-		fmt.Sprintf("(\\s|^)([%[1]s]+)\\S|\\S([%[1]s]+)(\\s|$)|\\S([%[1]s]+)\\S", INLINE_FORMAT_CHARS))
+	inlineFormattingPattStr string = fmt.Sprintf("(\\s|^)([%[1]s]+)\\S|\\S([%[1]s]+)(\\s|$)|\\S([%[1]s]+)\\S", INLINE_FORMAT_CHARS)
 
-	inlineFormatStartGroup int = 2
+	inlineCharPatt *regexp.Regexp = regexp.MustCompile(fmt.Sprintf("(\\\\([^\\s])?)|(%s)", inlineFormattingPattStr))
 
-	inlineFormatEndGroup int = 3
+	specialCharGroup int = 1
 
-	inlineFormatMidGroup int = 5
+	specialCharEscapedGroup int = 2
+
+	inlineFormattingGroup int = 3
+
+	inlineFormatStartGroup int = 5
+
+	inlineFormatEndGroup int = 6
+
+	inlineFormatMidGroup int = 8
 
 	unorderedListIndicPatt *regexp.Regexp = regexp.MustCompile(`^-\s`)
 
@@ -225,11 +293,26 @@ func Lex(text string) []MDToken {
 			lineEnd := cur + m[1]
 
 			for cur < lineEnd {
-				m := inlineFormattingPatt.FindSubmatchIndex(bytes[cur:lineEnd])
+				m := inlineCharPatt.FindSubmatchIndex(bytes[cur:lineEnd])
 				if m == nil {
 					text := string(bytes[cur:lineEnd])
 					tokens = append(tokens, MDTextToken{text})
 					cur = lineEnd
+				} else if m[specialCharGroup*2] >= 0 {
+					startidx, endidx := specialCharGroup*2, specialCharGroup*2+1
+					var escaped string
+					if m[specialCharEscapedGroup*2] >= 0 {
+						escaped = string(bytes[cur+m[specialCharEscapedGroup*2] : cur+m[specialCharEscapedGroup*2+1]])
+					}
+					escapeToken := MDEscapeToken{escaped}
+
+					// Only create text token if we have non-empty text to add
+					if m[startidx] > 0 {
+						textToken := MDTextToken{string(bytes[cur : cur+m[startidx]])}
+						tokens = append(tokens, textToken)
+					}
+					tokens = append(tokens, escapeToken)
+					cur += m[endidx]
 				} else {
 					var fmtToken MDInlineFormatToken
 					var textToken MDTextToken
