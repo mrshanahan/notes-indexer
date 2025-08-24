@@ -31,22 +31,22 @@ import (
 type MDTokenType int
 
 const (
-	NONE MDTokenType = iota
+	TOKEN_NONE MDTokenType = iota
 
-	NL
+	TOKEN_NL
 
-	TEXT // Requires content
+	TOKEN_TEXT // Requires content
 
-	LEADING_SPACE // Requires (n)
+	TOKEN_LEADING_SPACE // Requires (n)
 
-	UNORDERED_LIST_INDIC
-	ORDERED_LIST_INDIC
-	HEADER_INDIC // Requires (n)
-	EXPLICIT_CODEBLOCK_INDIC
+	TOKEN_UNORDERED_LIST_INDIC
+	TOKEN_ORDERED_LIST_INDIC
+	TOKEN_HEADER_INDIC // Requires (n)
+	TOKEN_EXPLICIT_CODEBLOCK_INDIC
 
-	INLINE_FORMAT_START
-	INLINE_FORMAT_MID
-	INLINE_FORMAT_END
+	TOKEN_INLINE_FORMAT_START
+	TOKEN_INLINE_FORMAT_MID
+	TOKEN_INLINE_FORMAT_END
 	// INLINE_ASTERISK_START
 	// INLINE_ASTERISK_MID
 	// INLINE_ASTERISK_END
@@ -60,31 +60,31 @@ const (
 	// INLINE_BACKTICK_MID
 	// INLINE_BACKTICK_END
 
-	INLINE_LINK_DESC_START
-	INLINE_LINK_DESC_END
-	INLINE_LINK_URL_START
-	INLINE_LINK_URL_END
+	TOKEN_INLINE_LINK_DESC_START
+	TOKEN_INLINE_LINK_DESC_END
+	TOKEN_INLINE_LINK_URL_START
+	TOKEN_INLINE_LINK_URL_END
 
-	SPECIAL_CHAR_ESCAPE
+	TOKEN_SPECIAL_CHAR_ESCAPE
 )
 
 var mdTokenTypeName map[MDTokenType]string = map[MDTokenType]string{
-	NONE:                     "NONE",
-	NL:                       "NL",
-	TEXT:                     "TEXT",
-	LEADING_SPACE:            "LEADING_SPACE",
-	UNORDERED_LIST_INDIC:     "UNORDERED_LIST_INDIC",
-	ORDERED_LIST_INDIC:       "ORDERED_LIST_INDIC",
-	HEADER_INDIC:             "HEADER_INDIC",
-	EXPLICIT_CODEBLOCK_INDIC: "EXPLICIT_CODEBLOCK_INDIC",
-	INLINE_FORMAT_START:      "INLINE_FORMAT_START",
-	INLINE_FORMAT_MID:        "INLINE_FORMAT_MID",
-	INLINE_FORMAT_END:        "INLINE_FORMAT_END",
-	INLINE_LINK_DESC_START:   "INLINE_LINK_DESC_START",
-	INLINE_LINK_DESC_END:     "INLINE_LINK_DESC_END",
-	INLINE_LINK_URL_START:    "INLINE_LINK_URL_START",
-	INLINE_LINK_URL_END:      "INLINE_LINK_URL_END",
-	SPECIAL_CHAR_ESCAPE:      "SPECIAL_CHAR_ESCAPE",
+	TOKEN_NONE:                     "NONE",
+	TOKEN_NL:                       "NL",
+	TOKEN_TEXT:                     "TEXT",
+	TOKEN_LEADING_SPACE:            "LEADING_SPACE",
+	TOKEN_UNORDERED_LIST_INDIC:     "UNORDERED_LIST_INDIC",
+	TOKEN_ORDERED_LIST_INDIC:       "ORDERED_LIST_INDIC",
+	TOKEN_HEADER_INDIC:             "HEADER_INDIC",
+	TOKEN_EXPLICIT_CODEBLOCK_INDIC: "EXPLICIT_CODEBLOCK_INDIC",
+	TOKEN_INLINE_FORMAT_START:      "INLINE_FORMAT_START",
+	TOKEN_INLINE_FORMAT_MID:        "INLINE_FORMAT_MID",
+	TOKEN_INLINE_FORMAT_END:        "INLINE_FORMAT_END",
+	TOKEN_INLINE_LINK_DESC_START:   "INLINE_LINK_DESC_START",
+	TOKEN_INLINE_LINK_DESC_END:     "INLINE_LINK_DESC_END",
+	TOKEN_INLINE_LINK_URL_START:    "INLINE_LINK_URL_START",
+	TOKEN_INLINE_LINK_URL_END:      "INLINE_LINK_URL_END",
+	TOKEN_SPECIAL_CHAR_ESCAPE:      "SPECIAL_CHAR_ESCAPE",
 }
 
 func (t MDTokenType) String() string {
@@ -122,7 +122,7 @@ type MDTextToken struct {
 	Content string
 }
 
-func (t MDTextToken) GetType() MDTokenType { return TEXT }
+func (t MDTextToken) GetType() MDTokenType { return TOKEN_TEXT }
 
 func (t MDTextToken) String() string { return fmt.Sprintf("%v(%s)", t.GetType(), t.Content) }
 
@@ -131,7 +131,7 @@ type MDHeaderIndicToken struct {
 	Content string
 }
 
-func (t MDHeaderIndicToken) GetType() MDTokenType { return HEADER_INDIC }
+func (t MDHeaderIndicToken) GetType() MDTokenType { return TOKEN_HEADER_INDIC }
 
 func (t MDHeaderIndicToken) String() string {
 	return fmt.Sprintf("HEADER(%s)", strings.Repeat("#", t.Count))
@@ -141,7 +141,7 @@ type MDOrderedListIndicToken struct {
 	Content string
 }
 
-func (t MDOrderedListIndicToken) GetType() MDTokenType { return ORDERED_LIST_INDIC }
+func (t MDOrderedListIndicToken) GetType() MDTokenType { return TOKEN_ORDERED_LIST_INDIC }
 
 func (t MDOrderedListIndicToken) String() string { return fmt.Sprintf("LIST(%s)", t.Content) }
 
@@ -149,7 +149,7 @@ type MDUnorderedListIndicToken struct {
 	Content string
 }
 
-func (t MDUnorderedListIndicToken) GetType() MDTokenType { return UNORDERED_LIST_INDIC }
+func (t MDUnorderedListIndicToken) GetType() MDTokenType { return TOKEN_UNORDERED_LIST_INDIC }
 
 func (t MDUnorderedListIndicToken) String() string { return fmt.Sprintf("LIST(%s)", t.Content) }
 
@@ -157,7 +157,7 @@ type MDLeadingSpaceToken struct {
 	Count int
 }
 
-func (t MDLeadingSpaceToken) GetType() MDTokenType { return LEADING_SPACE }
+func (t MDLeadingSpaceToken) GetType() MDTokenType { return TOKEN_LEADING_SPACE }
 
 func (t MDLeadingSpaceToken) String() string {
 	return fmt.Sprintf("%v(%s)", t.GetType(), strings.Repeat(" ", t.Count))
@@ -167,7 +167,7 @@ type MDEscapeToken struct {
 	Content string
 }
 
-func (t MDEscapeToken) GetType() MDTokenType { return SPECIAL_CHAR_ESCAPE }
+func (t MDEscapeToken) GetType() MDTokenType { return TOKEN_SPECIAL_CHAR_ESCAPE }
 
 func (t MDEscapeToken) String() string { return fmt.Sprintf("ESCAPED(%s)", t.Content) }
 
@@ -179,17 +179,17 @@ const (
 func GetSpecialCharTokenType(b byte) MDTokenType {
 	switch b {
 	case '\\':
-		return SPECIAL_CHAR_ESCAPE
+		return TOKEN_SPECIAL_CHAR_ESCAPE
 	case '[':
-		return INLINE_LINK_DESC_START
+		return TOKEN_INLINE_LINK_DESC_START
 	case ']':
-		return INLINE_LINK_DESC_END
+		return TOKEN_INLINE_LINK_DESC_END
 	case '(':
-		return INLINE_LINK_URL_START
+		return TOKEN_INLINE_LINK_URL_START
 	case ')':
-		return INLINE_LINK_URL_END
+		return TOKEN_INLINE_LINK_URL_END
 	default:
-		return NONE
+		return TOKEN_NONE
 	}
 }
 
@@ -268,7 +268,7 @@ func Lex(text string) []MDToken {
 	cur := 0
 	for cur < len(bytes) {
 		if bytes[cur] == '\n' {
-			token := MDSimpleToken{NL}
+			token := MDSimpleToken{TOKEN_NL}
 			tokens = append(tokens, token)
 			cur++
 		} else if m := leadingWhitespacePatt.FindIndex(bytes[cur:]); m != nil {
@@ -319,19 +319,19 @@ func Lex(text string) []MDToken {
 					if m[inlineFormatStartGroup*2] >= 0 { // start
 						startidx, endidx := inlineFormatStartGroup*2, inlineFormatStartGroup*2+1
 						chr := string(bytes[cur+m[startidx] : cur+m[endidx]])
-						fmtToken = MDInlineFormatToken{INLINE_FORMAT_START, chr}
+						fmtToken = MDInlineFormatToken{TOKEN_INLINE_FORMAT_START, chr}
 						textToken = MDTextToken{string(bytes[cur : cur+m[startidx]])}
 						cur += m[endidx]
 					} else if m[inlineFormatEndGroup*2] >= 0 { // end
 						startidx, endidx := inlineFormatEndGroup*2, inlineFormatEndGroup*2+1
 						chr := string(bytes[cur+m[startidx] : cur+m[endidx]])
-						fmtToken = MDInlineFormatToken{INLINE_FORMAT_END, chr}
+						fmtToken = MDInlineFormatToken{TOKEN_INLINE_FORMAT_END, chr}
 						textToken = MDTextToken{string(bytes[cur : cur+m[startidx]])}
 						cur += m[endidx]
 					} else { // mid
 						startidx, endidx := inlineFormatMidGroup*2, inlineFormatMidGroup*2+1
 						chr := string(bytes[cur+m[startidx] : cur+m[endidx]])
-						fmtToken = MDInlineFormatToken{INLINE_FORMAT_MID, chr}
+						fmtToken = MDInlineFormatToken{TOKEN_INLINE_FORMAT_MID, chr}
 						textToken = MDTextToken{string(bytes[cur : cur+m[startidx]])}
 						cur += m[endidx]
 					}
