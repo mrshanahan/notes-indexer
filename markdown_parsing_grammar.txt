@@ -1,0 +1,34 @@
+DOC:
+    ELEMENT (nl_token nl_token+ ELEMENT)*
+
+ELEMENT:
+    P | ROOT_LIST
+
+P:
+    # TODO: How do we capture \ at the end of a line here? => same paragraph but new line
+    FORMAT_TEXT ('\'? nl_token FORMAT_TEXT)*
+
+FORMAT_TEXT_X:
+    (inline_x_token_mid | inline_x_token_start) FORMAT_TEXT (inline_x_token_mid | inline_x_token_end)
+
+    where x/X in (bold, italics, underline, strikethrough, code)
+
+FORMAT_TEXT:
+    # NB: The last two rules capture scenarios where an inline format token is provided but
+    # not complete, in which case it will be treated as the literal token(s).
+    # E.g.: this is *not properly formatted_
+
+    FORMAT_TEXT_X
+    | (inline_x_token_mid | inline_x_token_start) FORMAT_TEXT
+    | FORMAT_TEXT (inline_x_token_mid | inline_x_token_end) 
+    | text_token
+        where x/X in (bold, italics, underline, strikethrough, code)
+
+LIST_ITEM_START:
+    unordered_list_token | ordered_list_token
+
+ROOT_LIST:
+    (<START>:LIST_ITEM_START) ws FORMAT_TEXT (nl_token (ROOT_LIST | SUB_LIST(1, ws * len(<START>)+1)))?
+
+SUB_LIST(n, prefix):
+    prefix (<INDENT>:ws{0,3}) (<START>:LIST_ITEM_START) ws FORMAT_TEXT (nl_token (SUB_LIST(n, prefix) | SUB_LIST(n+1, ws * (prefix + len(<INDENT>) + len(<START>)))))?

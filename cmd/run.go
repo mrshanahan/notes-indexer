@@ -23,10 +23,46 @@ func main() {
 		stem()
 	} else if strings.ToLower(command) == "tokenizer" {
 		tokenize()
+	} else if strings.ToLower(command) == "markdown" {
+		parseMarkdown()
 	} else {
 		fmt.Fprintf(os.Stderr, "error: invalid command: %s", command)
 		os.Exit(1)
 	}
+}
+
+func parseMarkdown() {
+	// if len(os.Args) > 2 {
+	// 	for _, f := range os.Args[2:] {
+	// 		bs, err := os.ReadFile(f)
+	// 		if err != nil {
+	// 			log.Fatalf("error: failed to read file %s: %v", f, err)
+	// 		}
+	// 		text := string(bs)
+	// 		doc, err := markdown.Parse(text)
+	// 		if err != nil {
+	// 			log.Fatalf("error: failed to parse document in %s: %v", f, err)
+	// 		}
+	// 		log.Printf("%v", doc)
+	// 	}
+	// } else {
+	// 	scanner := bufio.NewScanner(os.Stdin)
+	// 	lines := []string{}
+
+	// 	for scanner.Scan() {
+	// 		lines = append(lines, scanner.Text())
+	// 	}
+	// 	if err := scanner.Err(); err != nil {
+	// 		log.Fatalf("error: failed to read from stdin: %v", err)
+	// 	}
+
+	// 	text := strings.Join(lines, "\n")
+	// 	doc, err := markdown.Parse(text)
+	// 	if err != nil {
+	// 		log.Fatalf("error: failed to parse document: %v", err)
+	// 	}
+	// 	log.Printf("%v", doc)
+	// }
 }
 
 func tokenize() {

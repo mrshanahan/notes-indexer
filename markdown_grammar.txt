@@ -1,0 +1,49 @@
+# Initial grammar should include:
+# - Paragraphs
+# - Headers
+# - Lists
+# - Inline bold/italics/underline/strikethrough/code
+#   - If it's not super difficult, also do multiline of all of these
+# - Links
+# - Explicit code blocks
+#
+# What we're excluding:
+# - Tables
+# - Implicit code blocks
+
+
+
+# NB: A preprocessing step converts all line-leading tabs to four
+# spaces. Thus, no tabs are encountered when processing leading
+# whitespace. Tabs are still reproduced when in general text.
+
+S := #x20
+Ind := (#x20){2,5}
+NL := #xD #xA | #xA
+
+NonS := [#x21-#xD7FF] | [#xE000-#xFFFD] | [#x10000-#x10FFFF]
+SUListItem := '-' S+
+SOListItem := [\d]+ '.' S+
+
+Char := [.] - [#xD #xA]
+
+Content(n) := ListItem(n) | ExplicitCodeBlock | ContextCodeBlock | QuoteBlock | Header | GenericText
+
+GenericText := Char*
+
+// NB: If there is not S{n} but still S+, then the list item may fall under an ancestor node.
+UListItem(n) := S{n} SUListItem ListItemContent(n) where n = start idx of ListItemContent
+OListItem(n) := S{n} SOListItem ListItemContent(n) where n = start idx of ListItemContent
+ListItemContent(n) := (ExplicitCodeBlock(n) | QuoteBlock(n) | Header | GenericText) (NL S{n} Content(n))*
+ListItem(n) := UListItem(n) | OListItem(n)
+// List := ListItem (NL ListItem)*
+
+ExplicitCodeBlock := '```' NL (Char* NL) '```'
+
+ContextCodeBlock := <much, much more difficult>
+
+
+
+LineContent := Paragraph | 
+
+P := S{0-3} 
